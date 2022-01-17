@@ -348,7 +348,7 @@ I have tried configuring this countless amount of times, but always failed due t
     - host_mongo_secondary
     - host_mongo_arbiter
   roles:
-    - mongo
+    - mongodb
   any_error_true: true
   vars:
     mongo_restart_config: true
