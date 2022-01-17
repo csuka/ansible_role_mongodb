@@ -25,4 +25,4 @@
     - test-multi-03
   any_errors_fatal: true
   roles:
-    - ../mongo
+    - ../ansible_role_mongodb

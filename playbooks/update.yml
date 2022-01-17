@@ -1,8 +1,8 @@
 ---
-# - hosts: one_host
-#   become: true
-#   gather_facts: false
-#   tasks:
+- hosts: one_host
+  become: true
+  gather_facts: false
+  tasks:
     - name: update | set fact for amount of hosts
       set_fact:
         host_count: "{{ ansible_play_hosts | length }}"
@@ -27,13 +27,13 @@
         state: started
         enabled: true
 
-# - hosts:
-#     - mongo_arbiter
-#     - mongo_primary
-#   become: true
-#   any_errors_fatal: true
-#   gather_facts: false
-#   tasks:
+- hosts:
+    - mongo_arbiter
+    - mongo_primary
+  become: true
+  any_errors_fatal: true
+  gather_facts: false
+  tasks:
     - name: update | set fact for roles
       set_fact:
         mongo_primary: "{{ mongo_replication_role == 'primary' }}"
@@ -96,14 +96,14 @@
         replica_set: "{{ mongo_replication.replSetName }}"
       when: mongo_primary
 
-# - hosts:
-#     - mongo_primary
-#     - mongo_secondary
-#   serial: 1
-#   become: true
-#   any_errors_fatal: true
-#   gather_facts: false
-#   tasks:
+- hosts:
+    - mongo_primary
+    - mongo_secondary
+  serial: 1
+  become: true
+  any_errors_fatal: true
+  gather_facts: false
+  tasks:
     - name: update | set fact for roles
       set_fact:
         mongo_primary: "{{ mongo_replication_role == 'primary' }}"
@@ -165,11 +165,11 @@
         replica_set: "{{ mongo_replication.replSetName }}"
       when: mongo_primary
 
-# - hosts: mongo_primary
-#   become: true
-#   any_errors_fatal: true
-#   gather_facts: false
-#   tasks:
+- hosts: mongo_primary
+  become: true
+  any_errors_fatal: true
+  gather_facts: false
+  tasks:
     - name: update | set fact for roles
       set_fact:
         mongo_primary: "{{ mongo_replication_role == 'primary' }}"

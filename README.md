@@ -273,7 +273,7 @@ Please [read the docs](https://docs.mongodb.com/manual/tutorial/rotate-log-files
 
 Before updating, ensure proper testing is in place. Begin with reading the latest changes in the official docs.
 
-There is a separate update playbook, see `defaults/update.yml`. Uncomment the required fields and set the correct hostname in place.
+There is a separate update playbook, see `playbooks/update.yml`. Set the correct hostname in place and simply run the playbook.
 
 Updating can easily be done for patch versions, e.g. from 5.0.1 to 5.0.2.
 This role does not include major versioning upgrades due to breaking changes on each release and other obvious reasons. If this is desired, the logic is in place in this role to perform a major upgrade, you can easily built it yourself.
@@ -294,6 +294,7 @@ While updating, ensure applications don't write to mongo. Also, ensure a backup 
 
 If a replication set is active, the cluster should be maintained after the update. As taken [from the docs](https://docs.mongodb.com/manual/tutorial/upgrade-revision/), the following steps are executed:
 
+```bash
  - verify cluster health, if ok, continue
 
  - shutdown mongo application on arbiter if present
@@ -318,6 +319,7 @@ If a replication set is active, the cluster should be maintained after the updat
  - start mongo on original primary
 
  - wait until cluster health is ok
+```
 
 ### Updating a sharded environment
 
