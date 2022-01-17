@@ -1,0 +1,28 @@
+# mongod.conf
+
+# temporary file, for initial setup
+
+security:
+  authorization: disabled
+
+systemLog:
+{{ mongo_systemlog | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+
+storage:
+  dbPath: {{ mongo_storage.dbPath }}
+  journal:
+    enabled: true
+
+processManagement:
+  fork: true
+  pidFilePath: /var/run/mongodb/mongod.pid
+  timeZoneInfo: /usr/share/zoneinfo
+
+net:
+  port: {{ mongo_net.port }}
+  bindIp: {{ mongo_net.bindIp }}
+
+{% if replication_init is defined and replication_init %}
+replication:
+{{ mongo_replication | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+{% endif %}

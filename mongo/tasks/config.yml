@@ -1,0 +1,55 @@
+---
+- name: conf | set
+  template:
+    src: mongod.conf.j2
+    dest: /etc/mongod.conf
+    owner: root
+    group: root
+    mode: '0644'
+  register: mongo_conf_set
+
+- name: conf | ensure mongod is started and enabled
+  service:
+    name: mongod
+    state: started
+    enabled: true
+
+- name: conf | restart mongod service one by one, after a config change, if set
+  shell: "systemctl restart mongod && sleep {{ mongo_restart_seconds }}"
+  run_once: true
+  delegate_to: "{{ item }}"
+  loop: "{{ ansible_play_hosts }}"
+  args:
+    warn: false
+  when:
+    - mongo_restart_config
+    - mongo_conf_set.changed
+
+- name: conf | check cluster health after config change if applicable
+  community.mongodb.mongodb_status:
+    login_host: localhost
+    login_port: "{{ mongo_net.port }}"
+    login_user: admin
+    login_password: "{{ mongo_admin_pass }}"
+    validate: minimal
+    poll: 5
+    interval: 12
+    replica_set: "{{ mongo_replication.replSetName }}"
+
+    ssl: "{{ item.ssl | default(omit) }}"
+    ssl_ca_certs: "{{ item.ca_certs | default(omit) }}"
+    ssl_cert_reqs: "{{ item.cert_reqs | default(omit) }}"
+    ssl_certfile: "{{ item.certfile | default(omit) }}"
+    ssl_crlfile: "{{ item.ssl_crlfile | default(omit) }}"
+    ssl_keyfile: "{{ item.ssl_keyfile | default(omit) }}"
+    ssl_pem_passphrase: "{{ item.ssl_pem_passphrase | default(omit) }}"
+
+    auth_mechanism: "{{ item.auth_mechanism | default(omit) }}"
+    connection_options: "{{ item.connection_options | default(omit) }}"
+    create_for_localhost_exception: >-
+      {{ item.create_for_localhost_exception | default(omit) }}
+  when:
+    - host_count != '1'
+    - mongo_restart_config
+    - mongo_conf_set.changed
+    - mongo_primary

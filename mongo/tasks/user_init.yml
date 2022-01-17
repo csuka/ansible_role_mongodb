@@ -1,0 +1,33 @@
+---
+- name: user_init | set temporary conf
+  template:
+    src: mongod_init.conf.j2
+    dest: /etc/mongod.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: user_init | start mongo
+  service:
+    name: mongod
+    state: started
+
+- name: user_init | create users admin, adminuser and backup
+  community.mongodb.mongodb_user:
+    database: admin
+    name: "{{ item.name }}"
+    password: "{{ item.pass }}"
+    roles: "{{ item.role }}"
+    login_host: 127.0.0.1
+    login_port: "{{ mongo_net.port }}"
+  no_log: true
+  loop:
+    - name: admin
+      pass: "{{ mongo_admin_pass }}"
+      role: root
+    - name: "{{ mongo_adminuser_name }}"
+      pass: "{{ mongo_adminuser_pass }}"
+      role: userAdminAnyDatabase
+    - name: "{{ mongo_backup.user }}"
+      pass: "{{ mongo_backup.pass }}"
+      role: backup

@@ -1,0 +1,51 @@
+---
+- name: backup | set fact for first secondary in play
+  set_fact:
+    backup_on_host: "{{ item }}"
+  loop: "{{ play_hosts }}"
+  when:
+    - host_count != '1'
+    - backup_on_host is undefined
+    - hostvars[item].mongo_replication_role == 'secondary'
+  run_once: true
+
+- block:
+
+    - name: backup | ensure backup path exists
+      file:
+        path: "{{ mongo_backup.path }}"
+        owner: "{{ mongo_backup.owner }}"
+        group: "{{ mongo_backup.group }}"
+        mode: "{{ mongo_backup.mode }}"
+        state: 'directory'
+
+    - name: backup | set job in cron
+      cron:
+        name: "{{ item.name }}"
+        minute: "{{ mongo_backup.minute }}"
+        hour: "{{ mongo_backup.hour }}"
+        day: "{{ mongo_backup.day }}"
+        job: "{{ item.job }}"
+      loop:
+        - name: 'remove mongodb old backup files'
+          minute: "{{ mongo_backup.minute | int - 1 }}"
+          job: "/usr/bin/find {{ mongo_backup.path }}/ -maxdepth 1 -type d
+            -mmin +$((60*{{ mongo_backup.retention }})) -exec rm -rf {} \\+"
+
+        - name: 'create backup of mongo'
+          minute: "{{ mongo_backup.minute }}"
+          job: "for dbs in {{ mongo_backup.dbs | join(' ') }} ; do
+            mongodump --out
+            {{ mongo_backup.path }}/mongo_backup_$(date '+\\%Y-\\%m-\\%d')
+            --db $dbs
+            --port {{ mongo_net.port }}
+            --authenticationDatabase admin
+            --username '{{ mongo_backup.user }}'
+            --password '{{ mongo_backup.pass }}'
+            && ln -sf
+            {{ mongo_backup.path }}/mongo_backup_$(date '+\\%Y-\\%m-\\%d')
+            {{ mongo_backup.path }}/latest ; done"
+
+  when: >-
+    host_count == '1' or
+    backup_on_host is defined and inventory_hostname == backup_on_host

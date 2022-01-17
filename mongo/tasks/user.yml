@@ -1,0 +1,31 @@
+---
+- name: user | set defined users and databases
+  community.mongodb.mongodb_user:
+    login_host: localhost
+    login_port: "{{ mongo_net.port }}"
+    login_database: admin
+    login_user: admin
+    login_password: "{{ mongo_admin_pass }}"
+
+    database: "{{ item.database }}"
+    name: "{{ item.name }}"
+    roles: "{{ item.roles | default(omit) }}"
+    password: "{{ item.password }}"
+    update_password: "{{ item.update_password | default('always') }}"
+    state: "{{ item.state | default(present) }}"
+
+    replica_set: "{{ mongo_replication.replSet | default(omit) }}"
+
+    ssl: "{{ item.ssl | default(omit) }}"
+    ssl_ca_certs: "{{ item.ca_certs | default(omit) }}"
+    ssl_cert_reqs: "{{ item.cert_reqs | default(omit) }}"
+    ssl_certfile: "{{ item.certfile | default(omit) }}"
+    ssl_crlfile: "{{ item.ssl_crlfile | default(omit) }}"
+    ssl_keyfile: "{{ item.ssl_keyfile | default(omit) }}"
+    ssl_pem_passphrase: "{{ item.ssl_pem_passphrase | default(omit) }}"
+
+    auth_mechanism: "{{ item.auth_mechanism | default(omit) }}"
+    connection_options: "{{ item.connection_options | default(omit) }}"
+    create_for_localhost_exception: >-
+      {{ item.create_for_localhost_exception | default(omit) }}
+  loop: "{{ mongo_user }}"

@@ -1,0 +1,236 @@
+---
+# - hosts: one_host
+#   become: true
+#   gather_facts: false
+#   tasks:
+    - name: update | set fact for amount of hosts
+      set_fact:
+        host_count: "{{ ansible_play_hosts | length }}"
+
+    - name: update | mongo edition {{ mongo_edition }} when one host is present
+      dnf:
+        name: "mongodb-{{ mongo_edition }}"
+        state: latest
+      when: host_count == '1'
+
+    - name: update | set config
+      template:
+        src: mongod.conf.j2
+        dest: /etc/mongod.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: update | ensure mongod is started and enabled
+      service:
+        name: mongod
+        state: started
+        enabled: true
+
+# - hosts:
+#     - mongo_arbiter
+#     - mongo_primary
+#   become: true
+#   any_errors_fatal: true
+#   gather_facts: false
+#   tasks:
+    - name: update | set fact for roles
+      set_fact:
+        mongo_primary: "{{ mongo_replication_role == 'primary' }}"
+        mongo_arbiter: "{{ mongo_replication_role == 'arbiter' }}"
+
+    - name: update | ensure cluster health is ok
+      community.mongodb.mongodb_status:
+        login_host: localhost
+        login_port: "{{ mongo_net.port }}"
+        login_user: admin
+        login_password: "{{ mongo_admin_pass }}"
+        validate: minimal
+        poll: 5
+        interval: 12
+        replica_set: "{{ mongo_replication.replSetName }}"
+      when: mongo_primary
+
+    - name: update | stop mongod on arbiter
+      service:
+        name: mongod
+        state: stopped
+      when: mongo_arbiter
+
+    - name: update | mongo on arbiter
+      dnf:
+        name: "mongodb-{{ mongo_edition }}"
+        state: latest
+      when: mongo_arbiter
+
+    - name: update | set config on arbiter
+      template:
+        src: mongod.conf.j2
+        dest: /etc/mongod.conf
+        owner: root
+        group: root
+        mode: '0644'
+      when: mongo_arbiter
+
+    - name: update | ensure mongod is started and enabled on arbiter
+      service:
+        name: mongod
+        state: started
+        enabled: true
+      when: mongo_arbiter
+
+    - name: update | pause 20s after a restart of mongo
+      pause:
+        seconds: '20'
+      when: mongo_arbiter
+
+    - name: update | ensure cluster health is ok
+      community.mongodb.mongodb_status:
+        login_host: localhost
+        login_port: "{{ mongo_net.port }}"
+        login_user: admin
+        login_password: "{{ mongo_admin_pass }}"
+        validate: minimal
+        poll: 5
+        interval: 12
+        replica_set: "{{ mongo_replication.replSetName }}"
+      when: mongo_primary
+
+# - hosts:
+#     - mongo_primary
+#     - mongo_secondary
+#   serial: 1
+#   become: true
+#   any_errors_fatal: true
+#   gather_facts: false
+#   tasks:
+    - name: update | set fact for roles
+      set_fact:
+        mongo_primary: "{{ mongo_replication_role == 'primary' }}"
+        mongo_secondary: "{{ mongo_replication_role == 'secondary' }}"
+
+    - name: update | ensure cluster health is ok
+      community.mongodb.mongodb_status:
+        login_host: localhost
+        login_port: "{{ mongo_net.port }}"
+        login_user: admin
+        login_password: "{{ mongo_admin_pass }}"
+        validate: minimal
+        poll: 5
+        interval: 12
+        replica_set: "{{ mongo_replication.replSetName }}"
+      when: mongo_primary
+
+    - name: update | stop mongod on a secondary
+      service:
+        name: mongod
+        state: stopped
+      when: mongo_secondary
+
+    - name: update | mongo on secondary
+      dnf:
+        name: "mongodb-{{ mongo_edition }}"
+        state: latest
+      when: mongo_secondary
+
+    - name: update | set config on secondary
+      template:
+        src: mongod.conf.j2
+        dest: /etc/mongod.conf
+        owner: root
+        group: root
+        mode: '0644'
+      when: mongo_secondary
+
+    - name: update | ensure mongod is started and enabled on secondary
+      service:
+        name: mongod
+        state: started
+        enabled: true
+      when: mongo_secondary
+
+    - name: update | pause 20s after a restart of
+      pause:
+        seconds: '20'
+
+    - name: update | ensure cluster health is ok
+      community.mongodb.mongodb_status:
+        login_host: localhost
+        login_port: "{{ mongo_net.port }}"
+
+        login_password: "{{ mongo_admin_pass }}"
+        validate: minimal
+        poll: 5
+        interval: 12
+        replica_set: "{{ mongo_replication.replSetName }}"
+      when: mongo_primary
+
+# - hosts: mongo_primary
+#   become: true
+#   any_errors_fatal: true
+#   gather_facts: false
+#   tasks:
+    - name: update | set fact for roles
+      set_fact:
+        mongo_primary: "{{ mongo_replication_role == 'primary' }}"
+
+    - name: update | copy step content
+      copy:
+        dest: /root/mongo_primary_stepdown.js
+        mode: '0770'
+        owner: root
+        group: root
+        content: |
+          use admin;
+
+          db.auth("admin", "{{ mongo_admin_pass }}");
+
+          db.adminCommand( {
+              replSetStepDown: 60,
+              secondaryCatchUpPeriodSecs: 30,
+              force: false
+          } )
+      register: set_primary_stepdown
+
+    - name: update | make primary a secondary
+      shell: mongo < /root/mongo_primary_stepdown.js
+      when: set_primary_stepdown.changed
+      
+    - name: update | remove stepdown file
+      file:
+        state: absent
+        path: /root/mongo_primary_stepdown.js
+
+    - name: update | mongo on primary
+      dnf:
+        name: "mongodb-{{ mongo_edition }}"
+        state: latest
+
+    - name: update | set config on primary
+      template:
+        src: mongod.conf.j2
+        dest: /etc/mongod.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: update | ensure mongod is started and enabled on primary
+      service:
+        name: mongod
+        state: started
+        enabled: true
+
+    - name: update | pause 20s after a restart of
+      pause:
+        seconds: '20'
+
+    - name: update | ensure cluster health is ok
+      community.mongodb.mongodb_status:
+        login_host: localhost
+        login_port: "{{ mongo_net.port }}"
+        login_user: admin
+        login_password: "{{ mongo_admin_pass }}"
+        validate: minimal
+        poll: 5
+        interval: 12
+        replica_set: "{{ mongo_replication.replSetName }}"

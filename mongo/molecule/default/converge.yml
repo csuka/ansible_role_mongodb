@@ -1,0 +1,5 @@
+---
+- name: Converge
+  hosts: test-multi-01
+  roles:
+    - ../mongo

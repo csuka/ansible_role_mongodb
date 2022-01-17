@@ -1,0 +1,13 @@
+127.0.0.1   {{ inventory_hostname }}
+127.0.1.1   {{ inventory_hostname }}
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+
+{% for host in play_hosts %}
+{% if 'ansible_eth0' in hostvars[host] %}
+{{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}  {{ host }}
+{% else %}
+{{ hostvars[host]['ansible_default_ipv4'] }}  {{ host }}
+{% endif %}
+{% endfor %}

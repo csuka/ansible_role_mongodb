@@ -1,0 +1,28 @@
+---
+# required for fact gathering, ipv4 address
+- name: Converge
+  hosts:
+    - test-multi-01
+    - test-multi-02
+    - test-multi-03
+  tasks:
+    - name: install iproute
+      dnf:
+        name: iproute
+
+    - name: set /etc/hosts file
+      template:
+        src: hosts.j2
+        dest: /etc/hosts
+        mode: '0644'
+        owner: root
+        group: root
+
+- name: Converge
+  hosts:
+    - test-multi-01
+    - test-multi-02
+    - test-multi-03
+  any_errors_fatal: true
+  roles:
+    - ../mongo

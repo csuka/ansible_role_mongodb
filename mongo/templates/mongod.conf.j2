@@ -1,0 +1,74 @@
+# mongod.conf
+
+{{ ansible_managed | comment }}
+
+# for documentation of all options, see:
+#   http://docs.mongodb.org/manual/reference/configuration-options/
+
+systemLog:
+{{ mongo_systemlog | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+
+storage:
+{{ mongo_storage | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+
+processManagement:
+{{ mongo_processmanagement | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+
+net:
+{{ mongo_net | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+
+{% if mongo_security != '' %}
+security:
+{{ mongo_security | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+{% else %}
+#security:
+{% endif %}
+
+{% if mongo_operationprofiling != '' %}
+operationProfiling:
+{{ mongo_operationprofiling | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+{% else %}
+#operationProfiling:
+{% endif %}
+
+{% if mongo_replication != '' %}
+replication:
+{{ mongo_replication | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+{% else %}
+#replication:
+{% endif %}
+
+{% if mongo_sharding != '' %}
+sharding:
+{{ mongo_sharding | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+{% else %}
+#sharding:
+{% endif %}
+
+## Enterprise-Only Options
+{% if mongo_auditlog != '' %}
+auditLog:
+{{ mongo_auditlog | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+{% else %}
+#auditLog:
+{% endif %}
+
+{% if mongo_snmp != '' %}
+snmp:
+{{ mongo_snmp | to_nice_yaml(indent=2) | indent(width=2, first=True) }}
+{% else %}
+#snmp:
+{% endif %}
+
+{% if mongo_custom_cnf != '' %}
+{% for section_name, section_contents in mongo_custom_cnf.items() %}
+{{ section_name }}:
+{% for key, value in section_contents.items() %}
+{% if value is defined and value %}
+  {{ key }}: {{ value }}
+{% else %}
+{{ key }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endif %}

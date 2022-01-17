@@ -1,0 +1,28 @@
+---
+- name: numa | install numactl
+  dnf:
+    name: numactl
+
+- name: numa | check zone reclaim mode
+  shell: cat /proc/sys/vm/zone_reclaim_mode
+  register: zone_reclaim_check
+  changed_when: false
+
+- name: numa | apply changes when required
+  shell: "{{ item }}"
+  when: zone_reclaim_check.stdout != '0'
+  loop:
+    - echo 0 | sudo tee /proc/sys/vm/zone_reclaim_mode
+    - sysctl -w vm.zone_reclaim_mode=0
+
+- name: numa | service file
+  lineinfile:
+    path: /usr/lib/systemd/system/mongod.service
+    regexp: '^ExecStart='
+    line: "ExecStart=/usr/bin/numactl --interleave=all /usr/bin/mongod $OPTIONS"
+  register: numa_service_file
+
+- name: numa | reload daemons, because a service file changed
+  systemd:
+    daemon_reload: true
+  when: numa_service_file.changed

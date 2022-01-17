@@ -1,0 +1,30 @@
+---
+mongo_thp: false
+mongo_numa: false
+
+mongo_admin_pass: something
+mongo_adminuser_pass: something
+
+mongo_user:
+  - database: burgers
+    name: bob
+    password: 12345
+    state: present
+    update_password: on_create
+
+mongo_backup:
+  enabled: true
+  dbs:
+    - admin
+    - config
+    - local
+  user: backup
+  pass: something
+  path: /var/lib/mongo_backups
+  owner: mongod
+  group: mongod
+  mode: '0660'
+  hour: 2
+  minute: 5
+  day: "*"
+  retention: 46  # in hours

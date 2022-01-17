@@ -1,0 +1,10 @@
+{{ ansible_managed | comment }}
+
+[main]
+include=virtual-guest
+
+[vm]
+transparent_hugepages=never
+
+[disk]
+readahead=32

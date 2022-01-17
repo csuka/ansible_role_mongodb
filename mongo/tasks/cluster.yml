@@ -1,0 +1,156 @@
+---
+- name: cluster | check if hosts are in clustered
+  shell: >-
+    mongo --port {{ mongo_net.port }} --quiet --eval 'db.isMaster().hosts'
+  register: check_cluster
+  changed_when: false
+
+# # Get the replicaset status and then lookup the primary
+#  hostname and save to a variable
+# - name: Ensure replicaset is stable before beginning
+#   community.mongodb.mongodb_status:
+#     login_user: "{{ admin_user }}"
+#     login_password: "{{ admin_user_password }}"
+#     poll: 3
+#     interval: 10
+#   register: rs
+#
+# - name: Lookup PRIMARY replicaset member
+#   set_fact:
+#     primary: "{{ item.key.split('.')[0] }}"
+#   loop: "{{ lookup('dict', rs.replicaset) }}"
+#   when: "'PRIMARY' in item.value"
+
+- name: cluster | set fact
+  set_fact:
+    check_cluster: "{{ check_cluster.stdout }}"
+
+- block:
+
+    - name: cluster | create dict of cluster check
+      set_fact:
+        all_cluster_check: "{{ dict(keys|zip(values)) }}"
+      vars:
+        keys: "{{ ansible_play_hosts }}"
+        values: "{{ ansible_play_hosts |
+                    map('extract', hostvars, ['check_cluster'])
+                    | list }}"
+
+    - name: cluster | set fact when no host is clustered
+      set_fact:
+        no_host_is_clustered: false
+      when: all_cluster_check.values() | list is not any
+
+    - name: cluster | set fact when a host is not clustered
+      set_fact:
+        all_cluster_status: false
+      when: all_cluster_check.values() | list is any
+
+    - name: cluster | set fact when all hosts are in cluster
+      set_fact:
+        all_cluster_status: true
+      when: all_cluster_check.values() | list is all
+
+  run_once: true
+
+- name: cluster | build member list
+  set_fact:
+    members: >-
+      {{
+        members | default([]) +
+        [{
+          'host': item + ':{{ mongo_net.port }}',
+          'priority': member_weight[hostvars[item].mongo_replication_role]
+        }]
+      }}
+  loop: "{{ ansible_play_hosts }}"
+  run_once: true
+  vars:
+    member_weight:
+      primary: 3
+      secondary: 2
+      arbiter: 1
+
+- name: cluster | set fact for arbiter index number
+  set_fact:
+    arbiter_index: "{{ hostid }}"
+  when: hostvars[item].mongo_arbiter
+  loop: "{{ ansible_play_hosts }}"
+  loop_control:
+    index_var: hostid
+
+- name: cluster | block to initial build the replica set
+  block:
+
+    - name: cluster | set fact for initial replication
+      set_fact:
+        replication_init: true
+
+    - name: cluster | set temporary conf
+      template:
+        src: mongod_init.conf.j2
+        dest: /etc/mongod.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: cluster | restart mongo
+      service:
+        name: mongod
+        state: restarted
+
+    - name: cluster | initial build
+      community.mongodb.mongodb_replicaset:
+        login_host: localhost
+        login_port: "{{ mongo_net.port }}"
+        login_user: admin
+        login_password: "{{ mongo_admin_pass }}"
+        replica_set: "{{ mongo_replication.replSetName }}"
+        members: "{{ members }}"
+        arbiter_at_index: "{{ arbiter_index | default(omit) }}"
+      when: mongo_primary
+
+    - name: cluster | wait until cluster health is ok
+      community.mongodb.mongodb_status:
+        login_port: "{{ mongo_net.port }}"
+        validate: default
+        poll: 5
+        interval: 12
+        replica_set: "{{ mongo_replication.replSetName }}"
+      when: mongo_primary
+
+    - name: cluster | place original config
+      template:
+        src: mongod.conf.j2
+        dest: /etc/mongod.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: cluster | restart mongod service one by one
+      shell: systemctl restart mongod && sleep 15
+      run_once: true
+      delegate_to: "{{ item }}"
+      loop: "{{ ansible_play_hosts }}"
+      args:
+        warn: false
+
+    - name: cluster | wait until cluster health is ok
+      community.mongodb.mongodb_status:
+        login_host: localhost
+        login_port: "{{ mongo_net.port }}"
+        login_user: admin
+        login_password: "{{ mongo_admin_pass }}"
+        validate: minimal
+        poll: 5
+        interval: 12
+        replica_set: "{{ mongo_replication.replSetName }}"
+      when: mongo_primary
+
+  when: no_host_is_clustered is defined
+
+# - name: cluster | include scale playbook when applicable
+#   include_tasks: scale.yml
+#   when:
+#     - all_cluster_status is defined and not all_cluster_status
+#     - no_host_is_clustered is not defined

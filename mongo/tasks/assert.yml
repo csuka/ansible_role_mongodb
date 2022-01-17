@@ -1,0 +1,90 @@
+---
+- name: assert | set fact for amount of hosts
+  set_fact:
+    host_count: "{{ ansible_play_hosts | length }}"
+
+- name: assert | that uneven amount of hosts are set
+  assert:
+    that: "{{ host_count | int % 2 != 0 }}"
+
+- name: assert | that naming is set correctly for replication roles
+  assert:
+    that: |
+      mongo_replication_role == 'arbiter' or
+      mongo_replication_role == 'secondary' or
+      mongo_replication_role == 'primary'
+  when: host_count != '1'
+
+- name: assert | set fact for roles
+  set_fact:
+    mongo_primary: "{{ mongo_replication_role == 'primary' }}"
+    mongo_secondary: "{{ mongo_replication_role == 'secondary' }}"
+    mongo_arbiter: "{{ mongo_replication_role == 'arbiter' }}"
+
+- name: assert | several items for a single host
+  assert:
+    that:
+      - mongo_replication_role == ''
+      - mongo_security.keyFile is not defined
+  when: host_count == '1'
+
+- name: assert | that passwords are changed
+  assert:
+    that:
+      - "'change_me' not in
+        mongo_admin_pass or mongo_adminuser_pass or
+        mongo_backup.pass"
+
+- block:
+
+    - name: assert | create dictionary of bootstrappers
+      set_fact:
+        primaries: "{{ dict(keys|zip(values)) }}"
+      vars:
+        keys: "{{ ansible_play_hosts }}"
+        values: "{{ ansible_play_hosts|
+                    map('extract', hostvars, ['mongo_primary']) |
+                    list }}"
+
+    - name: assert | create list of bootstrappers
+      set_fact:
+        primary_list: "{{ primaries | dict2items |
+                       selectattr('value') |
+                       map(attribute='key') |
+                       list }}"
+
+    - name: assert | that there is one primary
+      assert:
+        that: primary_list | length == 1
+
+    - name: assert | create dictionary of bootstrappers
+      set_fact:
+        arbiters: "{{ dict(keys|zip(values)) }}"
+      vars:
+        keys: "{{ ansible_play_hosts }}"
+        values: "{{ ansible_play_hosts|
+                    map('extract', hostvars, ['mongo_arbiter']) |
+                    list }}"
+
+    - name: assert | create list of arbiters
+      set_fact:
+        arbiter_list: "{{ arbiters | dict2items |
+                       selectattr('value') |
+                       map(attribute='key') |
+                       list }}"
+
+    - name: assert | that there is one or no arbiter
+      assert:
+        that: (arbiter_list | length == 1) or (arbiter_list | length == 0)
+
+    - name: assert | several asserts for when cluster is enabled
+      assert:
+        that:
+          - mongo_replication_role != ''
+          - mongo_replication.replSetName | length > 0
+          - mongo_security.keyFile | length > 0
+          - mongo_primary is defined
+          - mongo_secondary is defined
+
+  run_once: true
+  when: host_count != '1'

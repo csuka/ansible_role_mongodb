@@ -1,0 +1,7 @@
+---
+- name: Verify
+  hosts: all
+  tasks:
+  - name: several tests should come here
+    assert:
+      that: true

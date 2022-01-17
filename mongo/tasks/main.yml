@@ -1,0 +1,35 @@
+---
+# this reset playbook is meant for development, thus commented out by design
+# - include_tasks: reset.yml
+
+# Do not skip, it is required
+- include_tasks: assert.yml
+
+- include_tasks: install.yml
+
+- include_tasks: thp.yml
+  when: mongo_thp
+
+- include_tasks: numa.yml
+  when: mongo_numa
+
+- include_tasks: keyfile.yml
+  when:
+    - host_count != '1'
+    - mongo_security.keyFile is defined
+
+- include_tasks: user_init.yml
+  when: set_user.changed
+
+- include_tasks: cluster.yml
+  when: host_count != '1'
+
+- include_tasks: config.yml
+
+- include_tasks: user.yml
+  when:
+    - mongo_user | length > 0
+    - host_count == '1' or mongo_primary
+
+- include_tasks: backup.yml
+  when: mongo_backup.enabled

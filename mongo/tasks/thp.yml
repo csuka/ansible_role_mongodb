@@ -1,0 +1,53 @@
+---
+- name: thp | install tuned
+  dnf:
+    name: tuned
+
+- name: thp | tuned dir
+  file:
+    path: /etc/tuned/virtual-guest-no-thp
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: thp | tuned conf file
+  template:
+    src: tuned.j2
+    dest: /etc/tuned/virtual-guest-no-thp/tuned.conf
+    owner: root
+    group: root
+    mode: '0644'
+  register: tuned_conf
+
+- name: thp | enable tuned profile
+  shell: tuned-adm profile virtual-guest-no-thp
+  when: tuned_conf.changed
+
+- name: thp | check transparent hugepages in kernel
+  shell: cat /sys/kernel/mm/transparent_hugepage/enabled
+  changed_when: false
+  register: check_hugepages
+
+- name: thp | load tuned-adm profile in kernel
+  shell: /sbin/tuned-adm profile no-thp
+  when: "'[always] madvise never' in check_hugepages.stdout"
+
+- name: thp | set service file
+  template:
+    src: disable-transparent-hugepages.service.j2
+    dest: /etc/systemd/system/disable-transparent-hugepages.service
+    owner: root
+    group: root
+    mode: '0644'
+  register: set_service_file
+
+- name: thp | reload daemons, because a service file changed
+  systemd:
+    daemon_reload: true
+  when: set_service_file.changed
+
+- name: thp | enable and start transparent hugepages when set
+  service:
+    name: disable-transparent-hugepages
+    enabled: true

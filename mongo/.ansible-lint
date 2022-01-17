@@ -1,0 +1,6 @@
+---
+skip_list:
+  - command-instead-of-shell
+  - no-handler
+  - yaml
+  - package-latest

@@ -1,0 +1,33 @@
+---
+lint: |
+  set -e
+  yamllint .
+  ansible-lint
+scenario:
+  name: default
+dependency:
+  name: galaxy
+driver:
+  name: docker
+provisioner:
+  name: ansible
+verifier:
+  name: ansible
+platforms:
+  - name: test-multi-01
+    hostname: test-multi-01
+    image: robertdebock/rockylinux
+    pull: true
+    command: "/usr/sbin/init"  # to use systemd
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+    tmpfs:
+      - /run
+      - /tmp
+    tty: true
+    privileged: true
+    environment:
+      container: docker
+    pre_build_image: true
+    networks:
+      - name: test_network

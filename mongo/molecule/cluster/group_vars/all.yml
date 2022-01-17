@@ -1,0 +1,37 @@
+---
+mongo_restart_config: true
+mongo_restart_seconds: 5
+
+mongo_thp: false
+mongo_numa: false
+
+mongo_replication:
+  replSetName: something
+
+mongo_security:
+  authorization: enabled
+  keyFile: /etc/keyfile_mongo
+
+mongo_admin_pass: something
+mongo_adminuser_pass: something
+
+mongo_net:
+  bindIp: 0.0.0.0
+  port: 27018
+
+mongo_systemlog:
+  destination: file
+  logAppend: true
+  path: /opt/somewhere/mongod.log
+
+mongo_storage:
+  dbPath: /opt/mongo/
+  journal:
+    enabled: true
+
+mongo_user:
+  - database: burgers
+    name: bob
+    password: 12345
+    state: present
+    update_password: on_create
