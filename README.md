@@ -294,7 +294,7 @@ While updating, ensure applications don't write to mongo. Also, ensure a backup 
 
 If a replication set is active, the cluster should be maintained after the update. As taken [from the docs](https://docs.mongodb.com/manual/tutorial/upgrade-revision/), the following steps are executed:
 
-```bash
+```
  - verify cluster health, if ok, continue
 
  - shutdown mongo application on arbiter if present
@@ -311,7 +311,7 @@ If a replication set is active, the cluster should be maintained after the updat
 
  - wait until cluster health is ok
 
- - repeat for reaming secondaries
+ - repeat for remaining secondaries
 
  - step down primary
  - update mongo on original primary
