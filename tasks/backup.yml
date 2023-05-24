@@ -26,6 +26,7 @@
         hour: "{{ mongo_backup.hour }}"
         day: "{{ mongo_backup.day }}"
         job: "{{ item.job }}"
+      no_log: true
       loop:
         - name: 'remove mongodb old backup files'
           minute: "{{ mongo_backup.minute | int - 1 }}"
