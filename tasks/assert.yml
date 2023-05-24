@@ -31,10 +31,10 @@
 - name: assert | that passwords are changed
   assert:
     that:
-      - "'change_me' not in
-        mongo_admin_pass or mongo_adminuser_pass or
-        mongo_backup.pass"
-
+      - mongo_admin_pass != 'change_me'
+      - mongo_adminuser_pass != 'change_me'
+      - mongo_backup.pass != 'change_me'
+  
 - block:
 
     - name: assert | create dictionary of bootstrappers
