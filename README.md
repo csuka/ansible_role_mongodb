@@ -1,6 +1,7 @@
 # MongoDB
 
-An Ansible role that installs, configures and manages MongoDB for EL 8.
+An Ansible role that installs, configures and manages MongoDB for EL 8.  
+A role for Ubuntu can be [found here](https://github.com/csuka/ansible_role_mongodb_ubuntu).
 
 **Please read this file carefully before deploying this Ansible role**
 
