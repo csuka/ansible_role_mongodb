@@ -29,3 +29,4 @@
     create_for_localhost_exception: >-
       {{ item.create_for_localhost_exception | default(omit) }}
   loop: "{{ mongo_user }}"
+  no_log: "{{ mongo_no_log }}"

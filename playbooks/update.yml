@@ -8,7 +8,7 @@
         host_count: "{{ ansible_play_hosts | length }}"
 
     - name: update | mongo edition {{ mongo_edition }} when one host is present
-      dnf:
+      apt:
         name: "mongodb-{{ mongo_edition }}"
         state: latest
       when: host_count == '1'
@@ -19,11 +19,11 @@
         dest: /etc/mongod.conf
         owner: root
         group: root
-        mode: '0644'
+        mode: 0644
 
     - name: update | ensure mongod is started and enabled
       service:
-        name: mongod
+        name: mongodb
         state: started
         enabled: true
 
@@ -58,7 +58,7 @@
       when: mongo_arbiter
 
     - name: update | mongo on arbiter
-      dnf:
+      apt:
         name: "mongodb-{{ mongo_edition }}"
         state: latest
       when: mongo_arbiter
@@ -69,7 +69,7 @@
         dest: /etc/mongod.conf
         owner: root
         group: root
-        mode: '0644'
+        mode: 0644
       when: mongo_arbiter
 
     - name: update | ensure mongod is started and enabled on arbiter
@@ -81,7 +81,7 @@
 
     - name: update | pause 20s after a restart of mongo
       pause:
-        seconds: '20'
+        seconds: 20
       when: mongo_arbiter
 
     - name: update | ensure cluster health is ok
@@ -128,7 +128,7 @@
       when: mongo_secondary
 
     - name: update | mongo on secondary
-      dnf:
+      apt:
         name: "mongodb-{{ mongo_edition }}"
         state: latest
       when: mongo_secondary
@@ -139,7 +139,7 @@
         dest: /etc/mongod.conf
         owner: root
         group: root
-        mode: '0644'
+        mode: 0644
       when: mongo_secondary
 
     - name: update | ensure mongod is started and enabled on secondary
@@ -151,7 +151,7 @@
 
     - name: update | pause 20s after a restart of
       pause:
-        seconds: '20'
+        seconds: 20
 
     - name: update | ensure cluster health is ok
       community.mongodb.mongodb_status:
@@ -193,7 +193,7 @@
       register: set_primary_stepdown
 
     - name: update | make primary a secondary
-      shell: mongo < /root/mongo_primary_stepdown.js
+      shell: mongosh < /root/mongo_primary_stepdown.js
       when: set_primary_stepdown.changed
       
     - name: update | remove stepdown file
@@ -212,7 +212,7 @@
         dest: /etc/mongod.conf
         owner: root
         group: root
-        mode: '0644'
+        mode: 0644
 
     - name: update | ensure mongod is started and enabled on primary
       service:

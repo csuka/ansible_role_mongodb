@@ -5,7 +5,7 @@
     dest: /etc/mongod.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: 0644
 
 - name: user_init | start mongo
   service:
@@ -20,7 +20,7 @@
     roles: "{{ item.role }}"
     login_host: 127.0.0.1
     login_port: "{{ mongo_net.port }}"
-  no_log: true
+  no_log: "{{ mongo_no_log }}"
   loop:
     - name: admin
       pass: "{{ mongo_admin_pass }}"

@@ -1,6 +1,6 @@
 ---
 - name: numa | install numactl
-  dnf:
+  apt:
     name: numactl
 
 - name: numa | check zone reclaim mode
@@ -19,7 +19,9 @@
   lineinfile:
     path: /usr/lib/systemd/system/mongod.service
     regexp: '^ExecStart='
-    line: "ExecStart=/usr/bin/numactl --interleave=all /usr/bin/mongod $OPTIONS"
+    line: >-
+      ExecStart=/usr/bin/numactl 
+      --interleave=all /usr/bin/mongod --config /etc/mongod.conf
   register: numa_service_file
 
 - name: numa | reload daemons, because a service file changed

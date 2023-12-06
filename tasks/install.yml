@@ -1,66 +1,69 @@
 ---
-- name: install | repo gpg key
-  rpm_key:
-    key: https://www.mongodb.org/static/pgp/server-{{ mongo_version }}.asc
+- name: install | dependencies
+  apt:
+    name: 
+      - gnupg
+      - python3-dev
+      - python3-pip
+    update_cache: true
   when: mongo_repo
+
+- name: install | ensure keyringdirectory exist
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: install | gpg key
+  ansible.builtin.get_url:
+    url: "https://pgp.mongodb.com/server-{{ mongo_version }}.asc"
+    dest: "/etc/apt/keyrings/mongo_{{ mongo_version }}.asc"
+    mode: 0644
 
 - name: install | repo
-  yum_repository:
-    name: "mongodb-org-{{ mongo_version }}"
-    description: 'MongoDB {{ mongo_edition }} repo'
-    file: mongodb
-    baseurl: >-
-      https://repo.mongodb.
-      {{- (mongo_edition == 'enterprise') | ternary('com', 'org') -}}
-      /yum/redhat/$releasever/mongodb-
-      {{- mongo_edition }}/
-      {{- mongo_version }}/x86_64/
-    enabled: true
-    gpgcheck: true
-    gpgkey: https://www.mongodb.org/static/pgp/server-{{ mongo_version }}.asc
-  when: mongo_repo
+  apt_repository:
+    repo: >-
+      deb [
+       signed-by=/etc/apt/keyrings/mongo_{{- mongo_version }}.asc ]
+      http://repo.mongodb.org/apt/debian bullseye/mongodb-org/{{ mongo_version }} main
+      multiverse
+    filename: "mongodb-{{ mongo_edition }}-{{ mongo_version }}"
 
-- name: install | group mongod
+- name: install | group mongodb
   group:
-    name: mongod
+    name: mongodb
     gid: 28
     system: true
 
-- name: install | user mongod
+- name: install | user mongodb
   user:
-    name: mongod
+    name: mongodb
     uid: 28
     system: true
-    group: mongod
+    group: mongodb
     comment: 'MongoDB Server'
     home: "{{ mongo_storage.dbPath }}"
     create_home: false
     shell: /sbin/nologin
   register: set_user
 
-- name: install | dependencies
-  dnf:
-    name:
-      - python3-devel
-      - python3-pip
-
 - name: install | mongo edition {{ mongo_edition }}
-  dnf:
+  apt:
     name: mongodb-{{ mongo_edition }}
 
 - name: install | data folder
   file:
     state: directory
     path: "{{ mongo_storage.dbPath }}"
-    mode: '0770'
-    owner: mongod
-    group: mongod
+    mode: 0755
+    owner: mongodb
+    group: mongodb
 
 - name: install | remove default data folder when set differently
   file:
     state: absent
-    path: /var/lib/mongo
-  when: mongo_storage.dbPath != '/var/lib/mongo'
+    path: /var/lib/mongodb
+  when: mongo_storage.dbPath != '/var/lib/mongodb'
 
 - name: install | remove log folder when set differently
   file:
@@ -76,8 +79,8 @@
       file:
         path: "{{ mongo_systemlog.path | dirname }}"
         state: directory
-        owner: mongod
-        group: mongod
+        owner: mongodb
+        group: mongodb
         mode: '0775'
 
     - name: install | stat if log file exist
@@ -90,8 +93,8 @@
         content: ""
         dest: "{{ mongo_systemlog.path }}"
         force: true
-        group: mongod
-        owner: mongod
+        group: mongodb
+        owner: mongodb
         mode: '0755'
       when: not mongo_log_check.stat.exists
 
@@ -104,3 +107,9 @@
     name: pymongo
     executable: pip3
     version: "{{ mongo_pymongo_version }}"
+
+- name: install | start mongodb
+  ansible.builtin.systemd_service:
+    state: started
+    name: mongod
+    enabled: true

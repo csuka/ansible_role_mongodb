@@ -51,7 +51,7 @@
       shell: >-
         openssl rand -base64 741 > {{ mongo_security.keyFile }} ;
         chmod 400 {{ mongo_security.keyFile }} ;
-        chown mongod: {{ mongo_security.keyFile }}
+        chown mongodb: {{ mongo_security.keyFile }}
       register: new_keyfile
       when: mongo_primary
 
@@ -67,8 +67,8 @@
         src: /tmp/mongo_keyfile
         dest: "{{ mongo_security.keyFile }}"
         mode: '0400'
-        owner: mongod
-        group: mongod
+        owner: mongodb
+        group: mongodb
 
   when: keyfile_none is defined
 
@@ -87,8 +87,8 @@
         src: /tmp/mongo_keyfile
         dest: "{{ mongo_security.keyFile }}"
         mode: '0400'
-        owner: mongod
-        group: mongod
+        owner: mongodb
+        group: mongodb
 
   when: keyfile_all is defined and not keyfile_all
 

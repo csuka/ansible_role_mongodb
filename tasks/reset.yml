@@ -3,16 +3,12 @@
 # It simply removes all mongo related files quick 'n dirty
 # This is configured to 'quickly' start with a fresh setup again
 
-- name: reset | repo gpg key
-  rpm_key:
-    key: https://www.mongodb.org/static/pgp/server-{{ mongo_version }}.asc
-    state: absent
-
 - name: reset | remove mongo from system
   shell: "{{ item }}"
   loop:
-    - "rm -f /etc/yum.repos.d/mongodb.repo"
-    - "yum remove mongod* -y"
+    - "systemctl stop mongod ; true"
+    - "rm -f /etc/apt/sources.list.d/mongod*"
+    - "apt remove mongo* -y"
     - "rm -rf /etc/mongo*"
     - "rm -rf /var/lib/mongo*"
     - "rm -rf /var/log/mongo*"
@@ -20,14 +16,12 @@
     - "rm -rf {{ mongo_storage.dbPath }}"
     - "rm {{ mongo_security.keyFile | default(omit) }} | echo"
     - "rm -f /etc/systemd/system/disable-transparent-hugepage*"
-    - userdel mongod | echo
+    - userdel mongodb | echo
+    - groupdel mongodb | echo
     - rm -rf /etc/tuned/virtual-guest-no-thp/tuned.conf
     - "rm -rf {{ mongo_backup.path }}"
-    - userdel mongod | echo  # weird bug, but sometimes the user isn't removed
+    - userdel mongodb | echo  # weird bug, but sometimes the user isn't removed
     - "rm -f /usr/lib/systemd/system/mongod.service"
-  args:
-    warn: false
-  when: true
 
 - name: reset | remove backup scripts
   cron:

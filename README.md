@@ -1,7 +1,8 @@
 # MongoDB
 
-An Ansible role that installs, configures and manages MongoDB for EL 8.  
-A role for Ubuntu can be [found here](https://github.com/csuka/ansible_role_mongodb_ubuntu).
+An Ansible role that installs, configures and manages MongoDB for Ubuntu 22.04.
+
+MongoDB for RHEL-like flavors can [be found here](https://github.com/csuka/ansible_role_mongodb).
 
 **Please read this file carefully before deploying this Ansible role**
 
@@ -18,6 +19,9 @@ A role for Ubuntu can be [found here](https://github.com/csuka/ansible_role_mong
 * Add user defined databases
 * Backup with mongodump
 * Logrotation, set from within mongo
+
+This is role is idempotent and passes ansible-lint checks.  
+Can be used with Ansible version 2.9 to latest. Might support earlier versions as well.
 
 ## Requirements
 
@@ -37,8 +41,18 @@ The version and edition can be set. By default, the official mongodb repository 
 
 ```yaml
 mongo_repo: true
-mongo_version: 5.0
+mongo_version: 6.0
 mongo_edition: org  # or enterprise
+```
+
+So far, Ubuntu 22.04 only supports MongoDB 6.0, and not lower.
+
+## No log
+
+By default, for security reasons, logging for several tasks is turned off. To turn it on:
+
+```yaml
+mongo_no_log: true
 ```
 
 ## Recommendations
@@ -186,7 +200,7 @@ A 2 host cluster is a fundamentally broken design, as it cannot maintain uptime 
 When there are exactly 2 hosts in the play, forming a cluster is not possible.
 Mongo will not cluster, because there must be a valid number of replicaset members.
 
-There are assertions in place to verify an uneven amount of hosts in the play.
+There are assertions in place to verify whether an uneven amount of hosts are the play.
 
 Configure with:
 ```yaml
@@ -196,21 +210,13 @@ mongo_replication_role: primary # or secondary, or arbiter
 # in group_vars/all.yml
 mongo_replication:
   replSetName: something
+mongo_security:
+  keyFile: /etc/keyfile_mongo
 ```
 
 There can be only 1 primary and 1 arbiter set.
 
 You shouldn't change the design of the cluster once it has been deployed, e.g. change a secondary to an arbiter.
-
-Ensure to [disable read concern majority](https://docs.mongodb.com/v4.0/reference/read-concern-majority/#disable-read-concern-majority) when version 4.4 or lower is installed.
-
-```yaml
-# not for version 5.0 or higher
-# and only when the architecture is PSA (Primary, Secondary, Arbiter)
-mongo_replication:
-  replSetName: something
-  enableMajorityReadConcern: false
-```
 
 ### Arbiter
 
@@ -244,8 +250,8 @@ mongo_backup:
   user: backup
   pass: change_me
   path: /var/lib/mongo_backups
-  owner: mongod
-  group: mongod
+  owner: mongodb
+  group: mongodb
   mode: '0660'
   hour: 2
   minute: 5
@@ -276,8 +282,10 @@ Before updating, ensure proper testing is in place. Begin with reading the lates
 
 There is a separate update playbook, see `playbooks/update.yml`. Set the correct hostname in place and simply run the playbook.
 
-Updating can easily be done for patch versions, e.g. from 5.0.1 to 5.0.2.
-This role does not include major versioning upgrades due to breaking changes on each release and other obvious reasons. If this is desired, the logic is in place in this role to perform a major upgrade, you can easily built it yourself.
+Updating can easily be done for patch versions, e.g. from 6.0.1 to 6.0.2.
+This role does not include major version upgrades due to breaking changes on each release and other obvious reasons. 
+
+If this is desired, the logic is in place in the update playbook to actually perform a major upgrade.
 
 New variables can be set when updating mongo. To update:
 
@@ -347,11 +355,11 @@ I have tried configuring this countless amount of times, but always failed due t
 
 ```yaml
 - hosts:
-    - host_mongo_primary
-    - host_mongo_secondary
-    - host_mongo_arbiter
+    - mongo_primary
+    - mongo_secondary
+    - mongo_arbiter
   roles:
-    - mongodb
+    - ansible_role_mongodb
   any_error_true: true
   vars:
     mongo_restart_config: true

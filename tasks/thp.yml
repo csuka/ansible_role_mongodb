@@ -1,6 +1,6 @@
 ---
 - name: thp | install tuned
-  dnf:
+  apt:
     name: tuned
 
 - name: thp | tuned dir
@@ -17,7 +17,7 @@
     dest: /etc/tuned/virtual-guest-no-thp/tuned.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: 0644
   register: tuned_conf
 
 - name: thp | enable tuned profile

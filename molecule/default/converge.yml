@@ -1,5 +1,0 @@
----
-- name: Converge
-  hosts: test-multi-01
-  roles:
-    - ../ansible_role_mongodb

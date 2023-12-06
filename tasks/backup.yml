@@ -17,7 +17,7 @@
         owner: "{{ mongo_backup.owner }}"
         group: "{{ mongo_backup.group }}"
         mode: "{{ mongo_backup.mode }}"
-        state: 'directory'
+        state: directory
 
     - name: backup | set job in cron
       cron:
@@ -26,7 +26,7 @@
         hour: "{{ mongo_backup.hour }}"
         day: "{{ mongo_backup.day }}"
         job: "{{ item.job }}"
-      no_log: true
+      no_log: "{{ mongo_no_log }}"
       loop:
         - name: 'remove mongodb old backup files'
           minute: "{{ mongo_backup.minute | int - 1 }}"
@@ -37,14 +37,14 @@
           minute: "{{ mongo_backup.minute }}"
           job: "for dbs in {{ mongo_backup.dbs | join(' ') }} ; do
             mongodump --out
-            {{ mongo_backup.path }}/mongo_backup_$(date '+\\%Y-\\%m-\\%d')
+            {{ mongo_backup.path }}/mongo_backup_$(date '+%Y-%m-%d')
             --db $dbs
             --port {{ mongo_net.port }}
             --authenticationDatabase admin
             --username '{{ mongo_backup.user }}'
             --password '{{ mongo_backup.pass }}'
             && ln -sf
-            {{ mongo_backup.path }}/mongo_backup_$(date '+\\%Y-\\%m-\\%d')
+            {{ mongo_backup.path }}/mongo_backup_$(date '+%Y-%m-%d')
             {{ mongo_backup.path }}/latest ; done"
 
   when: >-

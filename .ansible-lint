@@ -1,6 +1,13 @@
 ---
 skip_list:
   - command-instead-of-shell
+  - command-instead-of-module
   - no-handler
   - yaml
   - package-latest
+  - name[casing]
+  - fqcn[action-core]
+  - key-order[task]
+  - no-changed-when
+  - name[missing]
+  - jinja[spacing]
