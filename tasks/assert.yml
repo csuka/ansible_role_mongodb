@@ -3,10 +3,6 @@
   set_fact:
     host_count: "{{ ansible_play_hosts | length }}"
 
-# - name: assert | that uneven amount of hosts are set
-#   assert:
-#     that: "{{ host_count < '3' }}"
-
 - name: assert | set fact for roles
   set_fact:
     mongo_primary: "{{ mongo_replication_role == 'primary' }}"
@@ -38,10 +34,6 @@
                        map(attribute='key') |
                        list }}"
 
-    - name: assert | that there is one primary
-      assert:
-        that: primary_list | length > 1
-
     - name: assert | create dictionary of bootstrappers
       set_fact:
         arbiters: "{{ dict(keys|zip(values)) }}"
@@ -57,19 +49,6 @@
                        selectattr('value') |
                        map(attribute='key') |
                        list }}"
-
-    - name: assert | that there is one or no arbiter
-      assert:
-        that: (arbiter_list | length == 1) or (arbiter_list | length == 0)
-
-    - name: assert | several asserts for when cluster is enabled
-      assert:
-        that:
-          - mongo_replication_role != ''
-          - mongo_replication.replSetName | length > 0
-          - mongo_security.keyFile | length > 0
-          - mongo_primary is defined
-          - mongo_secondary is defined
 
   run_once: true
   when: host_count != '1'

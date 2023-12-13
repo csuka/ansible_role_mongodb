@@ -59,6 +59,8 @@ mongo_replication_weight: 3
 mongo_replication_is_arbiter: false
 mongo_replication_is_hidden: false
 
+mongo_replication_role: ''
+
 # define databases and users
 # see readme for examples
 mongo_user: []
