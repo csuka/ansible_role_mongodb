@@ -109,7 +109,7 @@
     version: "{{ mongo_pymongo_version }}"
 
 - name: install | start mongodb
-  ansible.builtin.systemd_service:
+  systemd_service:
     state: started
     name: mongod
     enabled: true
