@@ -15,13 +15,21 @@
       {{
         members | default([]) +
         [{
-          'host': item + ':{{ mongo_net.port }}',
+          '_id': hostid,
+          'host': hostvars[item].ansible_host + ':{{ mongo_net.port }}',
           'priority': hostvars[item].mongo_replication_weight,
           'hidden': hostvars[item].mongo_replication_is_hidden 
         }]
       }}
   loop: "{{ ansible_play_hosts }}"
+  loop_control:
+    index_var: hostid
   run_once: true
+
+- name: cluster | build bson members list
+  set_fact:
+    members_bson: >- 
+      { _id : "{{ mongo_replication.replSetName }}", members :  {{ members | to_json }} }
 
 - name: cluster | block to initial build the replica set
   block:
@@ -34,21 +42,6 @@
     loop_control:
       index_var: hostid
 
-  - name: cluster | set temporary conf
-    template:
-      src: mongod.conf.j2
-      dest: /etc/mongod.conf
-      owner: root
-      group: root
-      mode: 0644
-    vars:
-      replication_init: true
-
-  - name: cluster | restart mongo
-    service:
-      name: mongod
-      state: restarted
-
   - name: cluster | initial build
     community.mongodb.mongodb_replicaset:
       login_host: localhost
@@ -60,6 +53,13 @@
       arbiter_at_index: "{{ arbiter_index | default(omit) }}"
       validate: false
     when: check_cluster | length == 0
+    register: initial_build_status
+    ignore_errors: yes 
+
+  - name: cluster | reserve initial build
+    shell: >-
+      mongosh -u admin -p {{ mongo_admin_pass }} --port {{ mongo_net.port }} --eval 'rs.initiate({{ members_bson }})'
+    when: check_cluster | length == 0 and initial_build_status.failed
 
   - name: cluster | reconfigure replicaset
     community.mongodb.mongodb_replicaset:
