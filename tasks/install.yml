@@ -7,6 +7,10 @@
       - python3-pip
     update_cache: true
   when: mongo_repo
+  register: result
+  until: result is succeeded
+  retries: 3
+  delay: 3
 
 - name: install | ensure keyringdirectory exist
   ansible.builtin.file:
@@ -50,6 +54,10 @@
 - name: install | mongo edition {{ mongo_edition }}
   apt:
     name: mongodb-{{ mongo_edition }}
+  register: result
+  until: result is succeeded
+  retries: 3
+  delay: 3
 
 - name: install | data folder
   file:
