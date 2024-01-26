@@ -98,6 +98,17 @@
     run_once: true
     delegate_to: "{{ item }}"
     loop: "{{ ansible_play_hosts }}"
+    when: not mongo_setup_container
+
+  - name: cluster | restart mongod service one by one
+    community.docker.docker_container:
+      name: "{{ mongo_container_name }}"
+      state: started
+      restart: true
+    run_once: true
+    delegate_to: "{{ item }}"
+    loop: "{{ ansible_play_hosts }}"
+    when: not mongo_setup_container
 
   - name: cluster | wait until cluster health is ok
     community.mongodb.mongodb_status:

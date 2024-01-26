@@ -3,6 +3,10 @@ mongo_repo: true
 mongo_version: 6.0
 mongo_edition: org  # org or enterprise
 mongo_pymongo_version: 4.3.3
+mongo_setup_container: false
+mongo_container_name: mongodb
+mongo_container_image: mongo:4.2.8
+mongo_shell_deb_uri: https://downloads.mongodb.com/compass/mongodb-mongosh_2.1.1_amd64.deb
 
 # apply production recommendations, see readme
 mongo_thp: true

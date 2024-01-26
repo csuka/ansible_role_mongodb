@@ -11,6 +11,14 @@
   service:
     name: mongod
     state: started
+  when: not mongo_setup_container
+
+- name: user_init | start mongo
+  community.docker.docker_container:
+    name: "{{ mongo_container_name }}"
+    state: started
+    restart: true
+  when: mongo_setup_container
 
 - name: user_init | create users admin, adminuser and backup
   community.mongodb.mongodb_user:

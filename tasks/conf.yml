@@ -13,12 +13,22 @@
     name: mongod
     state: started
     enabled: true
+  when: not mongo_setup_container
 
 - name: conf | restart mongo
   service:
     name: mongod
     state: restarted
+  when: not mongo_setup_container
 
 - name: conf | await some time until mongo restarted
   ansible.builtin.pause:
     seconds: 10
+  when: not mongo_setup_container
+
+- name: conf | Restart a container
+  community.docker.docker_container:
+    name: "{{ mongo_container_name }}"
+    state: started
+    restart: true
+  when: mongo_setup_container

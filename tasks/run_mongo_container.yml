@@ -1,0 +1,51 @@
+---
+- name: container | download deb mongosh package
+  get_url: 
+    url: "{{ mongo_shell_deb_uri }}" 
+    dest: /tmp/mongosh.deb
+
+- name: container | install deb mongosh package
+  apt:
+    deb: /tmp/mongosh.deb
+
+- name: container | ensure data directory
+  file:
+    path: "{{ mongo_storage.dbPath }}"
+    state: directory
+    mode: '0755'
+    owner: 999
+    group: 999
+
+- name: Install required python packages
+  ansible.builtin.pip:
+    name: 
+      - "docker==6.1.3"
+      - "docker-compose"
+      - "pymongo==3.9"
+
+- name: container | set config
+  template:
+    src: mongod_init.conf.j2
+    dest: /etc/mongod.conf
+    owner: root
+    group: root
+    mode: 0644
+  register: mongo_conf_set
+
+- name: container | start replicaset mongo docker container
+  docker_compose:
+    project_name: db
+    definition:
+      version: '2'
+      services:
+        mongo:
+          container_name: "{{ mongo_container_name }}"
+          restart: always
+          image: "{{ mongo_container_image }}"
+          command: "mongod --config /etc/mongod.conf"
+          volumes:
+            - /etc/mongod.conf:/etc/mongod.conf
+            - "{{ mongo_security.keyFile }}:{{ mongo_security.keyFile }}"
+            - "{{ mongo_storage.dbPath }}:{{ mongo_storage.dbPath }}"
+          ports:
+            - "{{ mongo_net.bindIp }}:{{ mongo_net.port }}:27017" 

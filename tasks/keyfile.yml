@@ -53,7 +53,15 @@
         chmod 400 {{ mongo_security.keyFile }} ;
         chown mongodb: {{ mongo_security.keyFile }}
       register: new_keyfile
-      when: mongo_primary
+      when: mongo_primary and not mongo_setup_container
+
+    - name: keyfile | create when none has a keyfile
+      shell: >-
+        openssl rand -base64 741 > {{ mongo_security.keyFile }} ;
+        chmod 400 {{ mongo_security.keyFile }} ;
+        chown 999:999 {{ mongo_security.keyFile }}
+      register: new_keyfile
+      when: mongo_primary and mongo_setup_container
 
     - name: keyfile | fetch keyfile
       fetch:
@@ -69,6 +77,16 @@
         mode: '0400'
         owner: mongodb
         group: mongodb
+      when: not mongo_setup_container
+
+    - name: keyfile | copy required files to remaining hosts
+      copy:
+        src: /tmp/mongo_keyfile
+        dest: "{{ mongo_security.keyFile }}"
+        mode: '0400'
+        owner: 999
+        group: 999
+      when: mongo_setup_container
 
   when: keyfile_none is defined
 
@@ -89,6 +107,16 @@
         mode: '0400'
         owner: mongodb
         group: mongodb
+      when: not mongo_setup_container
+
+    - name: keyfile | copy required files to remaining hosts
+      copy:
+        src: /tmp/mongo_keyfile
+        dest: "{{ mongo_security.keyFile }}"
+        mode: '0400'
+        owner: 999
+        group: 999
+      when: mongo_setup_container
 
   when: keyfile_all is defined and not keyfile_all
 
