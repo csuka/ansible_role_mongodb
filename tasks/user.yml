@@ -14,7 +14,7 @@
     update_password: "{{ item.update_password | default('always') }}"
     state: "{{ item.state | default(present) }}"
 
-    replica_set: "{{ mongo_replication.replSet | default(omit) }}"
+    replica_set: "{{ mongo_replication.replSetName | default(omit) }}"
 
     ssl: "{{ item.ssl | default(omit) }}"
     ssl_ca_certs: "{{ item.ca_certs | default(omit) }}"
