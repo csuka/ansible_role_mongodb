@@ -6,6 +6,7 @@
   changed_when: false
   retries: 3
   delay: 3
+  until: check_cluster.rc == 0
 
 - name: cluster | set fact
   set_fact:
