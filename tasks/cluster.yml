@@ -4,6 +4,8 @@
     mongosh --port {{ mongo_net.port }} --quiet --eval 'db.isMaster().hosts'
   register: check_cluster
   changed_when: false
+  retries: 3
+  delay: 3
 
 - name: cluster | set fact
   set_fact:
