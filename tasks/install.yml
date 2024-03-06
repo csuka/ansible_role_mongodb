@@ -29,7 +29,7 @@
     repo: >-
       deb [
        signed-by=/etc/apt/keyrings/mongo_{{- mongo_version }}.asc ]
-      http://repo.mongodb.org/apt/debian bullseye/mongodb-org/{{ mongo_version }} main
+      http://repo.mongodb.org/apt/debian {{ mongo_os_distribution_release | default(ansible_distribution_release) }}/mongodb-org/{{ mongo_version }} main
       multiverse
     filename: "mongodb-{{ mongo_edition }}-{{ mongo_version }}"
 
