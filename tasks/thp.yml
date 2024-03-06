@@ -2,6 +2,10 @@
 - name: thp | install tuned
   apt:
     name: tuned
+  register: result
+  until: result is succeeded
+  retries: 3
+  delay: 3
 
 - name: thp | tuned dir
   file:

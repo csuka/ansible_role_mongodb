@@ -2,6 +2,10 @@
 - name: numa | install numactl
   apt:
     name: numactl
+  register: result
+  until: result is succeeded
+  retries: 3
+  delay: 3
 
 - name: numa | check zone reclaim mode
   shell: cat /proc/sys/vm/zone_reclaim_mode

@@ -12,6 +12,10 @@
         name: "mongodb-{{ mongo_edition }}"
         state: latest
       when: host_count == '1'
+      register: result
+      until: result is succeeded
+      retries: 3
+      delay: 3
 
     - name: update | set config
       template:
@@ -62,6 +66,10 @@
         name: "mongodb-{{ mongo_edition }}"
         state: latest
       when: mongo_arbiter
+      register: result
+      until: result is succeeded
+      retries: 3
+      delay: 3
 
     - name: update | set config on arbiter
       template:
@@ -132,6 +140,10 @@
         name: "mongodb-{{ mongo_edition }}"
         state: latest
       when: mongo_secondary
+      register: result
+      until: result is succeeded
+      retries: 3
+      delay: 3
 
     - name: update | set config on secondary
       template:
