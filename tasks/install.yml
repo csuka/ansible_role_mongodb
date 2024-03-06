@@ -117,7 +117,16 @@
     version: "{{ mongo_pymongo_version }}"
 
 - name: install | start mongodb
-  systemd_service:
+  systemd:
     state: started
     name: mongod
     enabled: true
+
+- name: container | download deb mongosh package
+  get_url: 
+    url: "{{ mongo_shell_deb_uri }}" 
+    dest: /tmp/mongosh.deb
+
+- name: container | install deb mongosh package
+  apt:
+    deb: /tmp/mongosh.deb

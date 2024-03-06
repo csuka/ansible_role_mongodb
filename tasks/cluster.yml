@@ -111,7 +111,7 @@
     run_once: true
     delegate_to: "{{ item }}"
     loop: "{{ ansible_play_hosts }}"
-    when: not mongo_setup_container
+    when: mongo_setup_container
 
   - name: cluster | wait until cluster health is ok
     community.mongodb.mongodb_status:
