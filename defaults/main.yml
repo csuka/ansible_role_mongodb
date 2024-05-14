@@ -2,7 +2,7 @@
 mongo_repo: true
 mongo_version: 5.0
 mongo_edition: org  # org or enterprise
-mongo_pymongo_version: 3.12.3
+mongo_pymongo_version: 4.7.2
 
 # Apply production recommendations, see readme
 mongo_thp: true

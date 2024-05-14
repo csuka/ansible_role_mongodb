@@ -19,8 +19,6 @@
   run_once: true
   delegate_to: "{{ item }}"
   loop: "{{ ansible_play_hosts }}"
-  args:
-    warn: false
   when:
     - mongo_restart_config
     - mongo_conf_set.changed

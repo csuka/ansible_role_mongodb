@@ -71,7 +71,6 @@
     mongo_systemlog.destination != 'file'
 
 - block:
-
     - name: install | ensure log folder exists
       file:
         path: "{{ mongo_systemlog.path | dirname }}"
@@ -104,3 +103,15 @@
     name: pymongo
     executable: pip3
     version: "{{ mongo_pymongo_version }}"
+
+# Check firewalld status
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: Open ports on firewall
+  ansible.posix.firewalld:
+    port: "{{ mongo_net.port }}/tcp"
+    permanent: true
+    immediate: true
+    state: enabled
+  when: ansible_facts['services']['firewalld.service']['state'] == 'running'
