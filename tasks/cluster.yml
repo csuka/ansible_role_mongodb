@@ -1,7 +1,7 @@
 ---
 - name: cluster | check if hosts are in clustered
   shell: >-
-    mongo --port {{ mongo_net.port }} --quiet --eval 'db.isMaster().hosts'
+    mongosh --port {{ mongo_net.port }} --quiet --eval 'db.isMaster().hosts'
   register: check_cluster
   changed_when: false
 
@@ -26,7 +26,6 @@
     check_cluster: "{{ check_cluster.stdout }}"
 
 - block:
-
     - name: cluster | create dict of cluster check
       set_fact:
         all_cluster_check: "{{ dict(keys|zip(values)) }}"
@@ -59,7 +58,7 @@
       {{
         members | default([]) +
         [{
-          'host': item + ':{{ mongo_net.port }}',
+          'host': hostvars[item].ansible_fqdn + ':{{ mongo_net.port }}',
           'priority': member_weight[hostvars[item].mongo_replication_role]
         }]
       }}
@@ -128,12 +127,10 @@
         mode: '0644'
 
     - name: cluster | restart mongod service one by one
-      shell: systemctl restart mongod && sleep 15
+      shell: "systemctl restart mongod && sleep {{ mongo_restart_seconds }}"
       run_once: true
       delegate_to: "{{ item }}"
       loop: "{{ ansible_play_hosts }}"
-      args:
-        warn: false
 
     - name: cluster | wait until cluster health is ok
       community.mongodb.mongodb_status:

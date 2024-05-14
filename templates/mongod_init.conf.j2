@@ -10,8 +10,10 @@ systemLog:
 
 storage:
   dbPath: {{ mongo_storage.dbPath }}
+  {% if mongo_version <= 6.0 -%}
   journal:
     enabled: true
+  {% endif %}
 
 processManagement:
   fork: true
